@@ -1,0 +1,7 @@
+db:
+ host: '10.101.10.66',
+ port: 3306,
+ user: 'root',
+ password: '123456',
+ database: 'stock',
+ charset: 'utf8'

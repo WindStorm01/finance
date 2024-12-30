@@ -77,6 +77,7 @@ if __name__ == '__main__':
     data = DataFrame(data, columns=['ticker', 'name', 'is_active', 'exchange_code', 'country_code', 'currency_code',
                                     'create_time'])
     # 在每一行中如果exchange_code = XSHG行，将ticker的值后面加上.SH，如果exchange_code = XSHE则在ticker的值后面加上.SZ
+    data.drop(columns=['create_time'], inplace=True)
     copy = data.copy()
     copy.loc[copy['exchange_code'] == 'XSHG', 'ticker'] += '.SH'
     copy.loc[copy['exchange_code'] == 'XSHE', 'ticker'] += '.SZ'
@@ -86,10 +87,12 @@ if __name__ == '__main__':
     pro = ts.pro_api()
 
     copy.dropna(inplace=True)
-    columns = ','.join(
-        f'`{col}`' if col.lower() in ['change', 'default', 'status', 'group', 'order', 'select', 'where'] else col
-        for col in copy.columns)
-    placeholders = ', '.join(['%s'] * len(copy.columns))
+    columns = 'ts_code,trade_date,open,high,low,close,pre_close,`change`,pct_chg,vol,amount'
+    #columns = ','.join(
+    #    f'`{col}`' if col.lower() in ['change', 'default', 'status', 'group', 'order', 'select', 'where'] else col
+    #    for col in copy.columns)
+    #placeholders = ', '.join(['%s'] * len(copy.columns))
+    placeholders = ','.join(['%s'] * len(columns.split(',')))
     insert_sql = f"INSERT INTO stock_data({columns}) VALUES ({placeholders})"
 
     # 获取002121.SZ的日线数据
@@ -97,7 +100,7 @@ if __name__ == '__main__':
     # 通过copy变量中的ticker列的值，传递给pro.daily函数，获取日线数据
     for i in range(len(copy)):
         print(copy.iloc[i]['name'])
-        df = pro.daily(ts_code=copy.iloc[i]['ticker'])
+        df = pro.daily(ts_code=copy.iloc[i]['ticker'],start_date='20241227')
         # 写入数据库 stock_data 表
         db.batch_insert(insert_sql, df)
         # sleep100毫秒，防止请求过快
